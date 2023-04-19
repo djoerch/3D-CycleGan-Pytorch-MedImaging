@@ -11,3 +11,4 @@ torchsummary
 torchsummaryX
 scikit-image
 scikit-learn
+seaborn
