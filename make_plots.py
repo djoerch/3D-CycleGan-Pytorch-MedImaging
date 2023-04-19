@@ -18,8 +18,9 @@ DESC = dedent(
 )
 EPILOG = dedent(
     """
-    Example call:
-      {filename} -i /path/to/loss_log.txt -o /path/to/output/folder
+    Example calls:
+      {filename} -i /path/to/loss_log.txt -o /path/to/output/folder --basename test
+      {filename} -i loss_log.txt -o outputs --basename cycle_gan
     """.format(  # noqa: E501
         filename=os.path.basename(__file__)
     )
@@ -153,7 +154,8 @@ def make_plots(df: pd.DataFrame, path_to_output_folder: Path, basename: str) -> 
         input data
     """
 
-    df["iters"] = df["iters"].cumsum()
+    # make iterations column cumulative
+    df[COL_ITERS] = df[COL_ITERS].cumsum()
 
     # make long format
     df = df.melt(
@@ -164,17 +166,19 @@ def make_plots(df: pd.DataFrame, path_to_output_folder: Path, basename: str) -> 
     # extract domain as column
     df[["variable", "domain"]] = df["variable"].str.split("_", expand=True)
 
-    # plot with one axes object per metric
-    g: sns.FacetGrid = sns.relplot(
-        kind="line", data=df, x="iters", y="value", row="domain", col="variable",
-    )
-    g.savefig(Path(path_to_output_folder, basename + "_individual.png"))
+    for time_var in ["epoch", "iters"]:
 
-    # plot with one axes per domain
-    g: sns.FacetGrid = sns.relplot(
-        kind="line", data=df, x="iters", y="value", col="domain", hue="variable",
-    )
-    g.savefig(Path(path_to_output_folder, basename + "_domains.png"))
+        # plot with one axes object per metric
+        g: sns.FacetGrid = sns.relplot(
+            kind="line", data=df, x=time_var, y="value", row="domain", col="variable",
+        )
+        g.savefig(Path(path_to_output_folder, basename + f"_individual_{time_var}.png"))
+
+        # plot with one axes per domain
+        g: sns.FacetGrid = sns.relplot(
+            kind="line", data=df, x=time_var, y="value", col="domain", hue="variable",
+        )
+        g.savefig(Path(path_to_output_folder, basename + f"_domains_{time_var}.png"))
 
 
 if __name__ == "__main__":
